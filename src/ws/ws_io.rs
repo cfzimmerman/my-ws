@@ -16,7 +16,7 @@ use tokio::net::{TcpListener, TcpStream};
 pub use tokio_tungstenite::tungstenite::protocol::Message;
 
 /// WsIoMsg: The fundamental unit passed between client and server. Any
-/// received package now obeying this struct will be ignored.
+/// received package not obeying this struct will be ignored.
 #[derive(Serialize, Deserialize)]
 pub struct WsIoMsg {
     path: String,
