@@ -2,13 +2,16 @@ use my_ws::ws::{
     event::{Event, EventAction},
     socket::To,
     ws_error::WsError,
-    ws_io::Io,
+    ws_io::{Io, Message},
 };
 use std::{boxed::Box, env};
-use tokio_tungstenite::tungstenite::Message;
 
-// https://github.com/snapview/tokio-tungstenite/blob/master/examples/server.rs
-
+/// Example
+///
+/// Events are specified as boxed functions mapped to a string path name.
+/// In this example, a single path is mounted on the WS listener.
+/// While the server is listening, all incoming messages of path `echo` are echoed
+/// back to all connected clients.
 #[tokio::main]
 async fn main() -> Result<(), WsError> {
     let address = env::args()
@@ -28,25 +31,3 @@ async fn main() -> Result<(), WsError> {
 
     Ok(())
 }
-
-/*
-
-To do:
-- Mount WS listeners
-
-Next up:
-- Configure routes
-    - path: string
-    - destination?
-    - method
-
-
-- Connect to Redis
-- Receive data, parse it:
-    count: number,
-    origin: string,
-- Update a hash in redis
-- Read back the hash
-- Send the hash back as a response
-
-*/

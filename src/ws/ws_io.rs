@@ -12,7 +12,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tokio::net::{TcpListener, TcpStream};
-use tokio_tungstenite::tungstenite::protocol::Message;
+
+pub use tokio_tungstenite::tungstenite::protocol::Message;
 
 /// WsIoMsg: The fundamental unit passed between client and server. Any
 /// received package now obeying this struct will be ignored.
