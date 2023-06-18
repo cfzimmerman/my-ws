@@ -5,7 +5,7 @@ While I could have used a package, I wanted to try writing my own.
 
 This crate is very-much inspired by the design of JS Socket.io. A server mounts
 listeners on paths and passes listeners the context they need to respond.
-I wrote this in about a day, so it's missing some essential Socket.io features
+I wrote this pretty quickly, so it's missing some essential Socket.io features
 like fallback HTTP polling and client room designations, but I'm overall quite
 happy with the project. Because of modular design, extending to include those
 and other features should be fairly straightforward if needed.
