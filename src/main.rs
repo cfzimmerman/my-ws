@@ -19,9 +19,15 @@ async fn main() -> Result<(), WsError> {
         .unwrap_or_else(|| "127.0.0.1:5445".to_string());
 
     let echo: EventAction = Box::new(|socket, message| {
-        if let Err(error) = socket.send(Message::Text(message), To::All) {
-            eprintln!("event failed: {:?}", error)
-        };
+        tokio::spawn(async move {
+            let socket = socket.lock().await;
+            if let serde_json::value::Value::String(msg) = message {
+                if let Err(error) = socket.send(Message::Text(msg), To::All).await {
+                    eprintln!("event failed: {:?}", error)
+                };
+            }
+        });
+        ()
     });
 
     let event_list: Vec<Event> = vec![Event::new("echo", echo)];

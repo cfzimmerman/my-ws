@@ -6,12 +6,12 @@ use crate::ws::{
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    net::SocketAddr,
-    sync::{Arc, Mutex},
+use serde_json::Value;
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use tokio::{
+    net::{TcpListener, TcpStream},
+    sync::Mutex,
 };
-use tokio::net::{TcpListener, TcpStream};
 
 pub use tokio_tungstenite::tungstenite::protocol::Message;
 
@@ -20,7 +20,7 @@ pub use tokio_tungstenite::tungstenite::protocol::Message;
 #[derive(Serialize, Deserialize)]
 pub struct WsIoMsg {
     path: String,
-    payload: String,
+    payload: Value,
 }
 
 /// Io: the main socket server instance.
@@ -48,7 +48,7 @@ impl Io {
         Ok(Io {
             listener,
             clients: ClientMap::new(Mutex::new(HashMap::new())),
-            events: EventMap::new(Mutex::new(event_map)),
+            events: EventMap::new(std::sync::Mutex::new(event_map)),
         })
     }
 
@@ -74,11 +74,12 @@ impl Io {
     ) -> Result<(), WsError> {
         let ws_stream = tokio_tungstenite::accept_async(stream).await?;
         let (sender, receiver) = unbounded();
-        client_map.lock()?.insert(addr, sender);
+        client_map.lock().await.insert(addr, sender);
         let (outbound, inbound) = ws_stream.split();
-        let socket = Socket::new(&client_map, addr);
+        let socket_shareable = Arc::new(Mutex::new(Socket::new(&client_map, addr)));
 
         let catch_inbound = inbound.try_for_each(|msg| {
+            let socket = socket_shareable.clone();
             let str_msg = if let Message::Text(txt) = msg {
                 txt
             } else {
@@ -87,6 +88,7 @@ impl Io {
             let from_client = if let Ok(pth) = serde_json::from_str::<WsIoMsg>(&str_msg) {
                 pth
             } else {
+                eprintln!("unable to parse message: {:?}", str_msg);
                 return future::ok(());
             };
             let path: &str = &from_client.path;
@@ -97,7 +99,7 @@ impl Io {
             };
             if let Some(handler) = events.get(path) {
                 // All the conditions are correct. We can call the event.
-                (*handler)(&socket, from_client.payload);
+                (*handler)(socket, from_client.payload);
             }
             future::ok(())
         });
@@ -107,7 +109,7 @@ impl Io {
         future::select(catch_inbound, receive_from_others).await;
 
         println!("{} disconnected", &addr);
-        client_map.lock()?.remove(&addr);
+        client_map.lock().await.remove(&addr);
 
         Ok(())
     }

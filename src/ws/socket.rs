@@ -14,15 +14,18 @@ pub enum To {
 }
 
 /// Socket: an object used to handle a client's connection with the server.
-pub struct Socket<'a> {
+pub struct Socket {
     address: SocketAddr,
-    clients: &'a ClientMap,
+    clients: ClientMap,
 }
 
-impl Socket<'_> {
+impl Socket {
     /// new: creates a new Socket object
     pub fn new(clients: &ClientMap, address: SocketAddr) -> Socket {
-        Socket { address, clients }
+        Socket {
+            address,
+            clients: clients.clone(),
+        }
     }
 
     /// send: sends a message to everyone connected to the server matching the
@@ -30,8 +33,8 @@ impl Socket<'_> {
     /// Prints to stderr if a message fails to send. May also return WsError.
     /// If messages failed to send, returns a vector of clients who didn't receive
     /// messages.
-    pub fn send(&self, msg: Message, to: To) -> Result<(), WsError> {
-        let clients = self.clients.lock()?;
+    pub async fn send(&self, msg: Message, to: To) -> Result<(), WsError> {
+        let clients = self.clients.lock().await;
         let mut failed: Vec<String> = vec![];
         let mut send_failed = |address: String, error: TrySendError<Message>| {
             eprintln!("send error: {error}");

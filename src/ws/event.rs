@@ -1,4 +1,5 @@
 use crate::ws::socket::Socket;
+use serde_json::Value;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -16,7 +17,7 @@ pub type EventMap = Arc<Mutex<HashMap<&'static str, EventAction>>>;
 
 /// EventAction: Given a Socket instance and the string received by the server,
 /// performs some desired action.
-pub type EventAction = Box<dyn Fn(&Socket, String) -> () + Send>;
+pub type EventAction = Box<dyn Fn(Arc<tokio::sync::Mutex<Socket>>, Value) -> () + Send>;
 
 impl Event {
     /// new: Creates a new Event object.
