@@ -76,6 +76,12 @@ impl Io {
         let (sender, receiver) = unbounded();
         client_map.lock().await.insert(addr, sender);
         let (outbound, inbound) = ws_stream.split();
+
+        /*
+        The socket is a Mutex because multiple requests could come in from
+        one user at the same time. If async processing is involved, this allows
+        us to properly pass the socket client to handlers without lifetime issues.
+        */
         let socket_shareable = Arc::new(Mutex::new(Socket::new(&client_map, addr)));
 
         let catch_inbound = inbound.try_for_each(|msg| {
