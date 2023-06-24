@@ -1,12 +1,10 @@
 use crate::ws::{
-    event::{Event, EventMap},
+    event::{Context, Event, EventMap, WsIoMsg},
     socket::Socket,
     ws_error::WsError,
 };
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -14,14 +12,6 @@ use tokio::{
 };
 
 pub use tokio_tungstenite::tungstenite::protocol::Message;
-
-/// WsIoMsg: The fundamental unit passed between client and server. Any
-/// received package not obeying this struct will be ignored.
-#[derive(Serialize, Deserialize)]
-pub struct WsIoMsg {
-    pub path: String,
-    pub payload: Value,
-}
 
 /// Io: the main socket server instance.
 pub struct Io {
@@ -35,6 +25,7 @@ type Tx = UnboundedSender<Message>;
 /// ClientMap: a thread-shareable hash mapping client addresses with
 /// their send-message connection.
 pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+pub type ServerEventCxt = Arc<tokio::sync::Mutex<Socket>>;
 
 impl Io {
     /// build: attempt to bind a TCP listener at the given address and set up the WS client.
@@ -105,7 +96,7 @@ impl Io {
             };
             if let Some(handler) = events.get(path) {
                 // All the conditions are correct. We can call the event.
-                (*handler)(socket, from_client.payload);
+                (*handler)(Context::Server(socket), from_client.payload);
             }
             future::ok(())
         });

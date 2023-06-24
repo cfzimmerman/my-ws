@@ -1,8 +1,8 @@
 use my_ws::ws::{
-    event::{Event, EventAction},
+    event::{Context, Event, EventAction},
+    server_io::{Io, Message},
     socket::To,
     ws_error::WsError,
-    ws_io::{Io, Message},
 };
 use std::{boxed::Box, env};
 
@@ -20,6 +20,10 @@ async fn main() -> Result<(), WsError> {
 
     let echo: EventAction = Box::new(|socket, message| {
         tokio::spawn(async move {
+            let socket = match socket {
+                Context::Server(sk) => sk,
+                Context::Client(_) => return,
+            };
             let socket = socket.lock().await;
             if let serde_json::value::Value::String(msg) = message {
                 if let Err(error) = socket.send(Message::Text(msg), To::All).await {

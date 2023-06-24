@@ -1,5 +1,5 @@
-pub mod client;
+pub mod client_io;
 pub mod event;
+pub mod server_io;
 pub mod socket;
 pub mod ws_error;
-pub mod ws_io;

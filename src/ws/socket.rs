@@ -1,4 +1,4 @@
-use crate::ws::{ws_error::WsError, ws_io::ClientMap};
+use crate::ws::{server_io::ClientMap, ws_error::WsError};
 use futures_channel::mpsc::TrySendError;
 use std::net::SocketAddr;
 use tokio_tungstenite::tungstenite::protocol::Message;
@@ -7,6 +7,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 /// Origin: Send to the client we just received the message from.
 /// NonOrigin: Send to everyone except the client we just received the message from.
 /// All: Send to everyone connected to the server.
+#[derive(Debug)]
 pub enum To {
     Origin,
     NonOrigin,
@@ -14,6 +15,7 @@ pub enum To {
 }
 
 /// Socket: an object used to handle a client's connection with the server.
+#[derive(Debug)]
 pub struct Socket {
     address: SocketAddr,
     clients: ClientMap,
