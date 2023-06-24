@@ -1,3 +1,4 @@
+pub mod client;
 pub mod event;
 pub mod socket;
 pub mod ws_error;

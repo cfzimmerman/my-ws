@@ -19,8 +19,8 @@ pub use tokio_tungstenite::tungstenite::protocol::Message;
 /// received package not obeying this struct will be ignored.
 #[derive(Serialize, Deserialize)]
 pub struct WsIoMsg {
-    path: String,
-    payload: Value,
+    pub path: String,
+    pub payload: Value,
 }
 
 /// Io: the main socket server instance.

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.28.2", features = ["full"] }
 tokio-tungstenite = "0.19.0"
+tokio-stream = "0.1.14"
 futures-channel = "0.3.28"
 futures-util = "0.3.28"
 serde_json = "1.0.97"
