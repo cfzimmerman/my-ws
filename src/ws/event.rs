@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use super::{client_io::ClientEventCxt, server_io::ServerEventCxt};
 
@@ -29,11 +26,11 @@ pub struct Event {
 }
 
 /// EventMap: A thread-shared hash mapping each path to its associated action.
-pub type EventMap = Arc<Mutex<HashMap<&'static str, EventAction>>>;
+pub type EventMap = Arc<HashMap<&'static str, EventAction>>;
 
 /// EventAction: Given a Socket instance and the string received by the server,
 /// performs some desired action.
-pub type EventAction = Box<dyn Fn(Context, Value) -> () + Send>;
+pub type EventAction = Box<dyn Fn(Context, Value) -> () + Send + Sync>;
 
 impl Event {
     /// new: Creates a new Event object.

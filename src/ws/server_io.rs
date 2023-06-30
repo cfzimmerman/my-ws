@@ -39,7 +39,7 @@ impl Io {
         Ok(Io {
             listener,
             clients: ClientMap::new(Mutex::new(HashMap::new())),
-            events: EventMap::new(std::sync::Mutex::new(event_map)),
+            events: EventMap::new(event_map),
         })
     }
 
@@ -89,12 +89,7 @@ impl Io {
                 return future::ok(());
             };
             let path: &str = &from_client.path;
-            let events = if let Ok(ev) = event_map.lock() {
-                ev
-            } else {
-                return future::ok(());
-            };
-            if let Some(handler) = events.get(path) {
+            if let Some(handler) = (*event_map).get(path) {
                 // All the conditions are correct. We can call the event.
                 (*handler)(Context::Server(socket), from_client.payload);
             }
