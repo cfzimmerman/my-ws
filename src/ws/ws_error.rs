@@ -3,6 +3,7 @@
 pub enum WsError {
     IoError(std::io::Error),
     ClientNotFound,
+    FailedToConnect,
     TungsteniteError(tokio_tungstenite::tungstenite::Error),
     MutexError(String),
     SerdeError(String),

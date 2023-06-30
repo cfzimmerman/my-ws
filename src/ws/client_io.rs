@@ -7,7 +7,7 @@ use super::{
     ws_error::WsError,
 };
 
-use futures_channel::mpsc::{unbounded, UnboundedSender};
+use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 use futures_util::{future, pin_mut, StreamExt, TryStreamExt};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
@@ -19,7 +19,7 @@ pub struct Client {
 #[derive(Debug)]
 /// The entity through which messages may be properly sent to the server.
 pub struct Messenger {
-    sender: UnboundedSender<Message>,
+    pub sender: UnboundedSender<Message>,
 }
 
 impl Messenger {
@@ -34,15 +34,30 @@ impl Messenger {
 pub type ClientEventCxt = Arc<Messenger>;
 
 impl Client {
+    /// returns a new Client and a receiver instance. The receiver instance
+    /// should be provided to 'listen' in order to properly emit WS messages.
+    pub fn new() -> (Self, UnboundedReceiver<Message>) {
+        let (tx, rx) = unbounded();
+        let mg: ClientEventCxt = Arc::new(Messenger { sender: tx });
+        (
+            Client {
+                messenger: mg.clone(),
+            },
+            rx,
+        )
+    }
+
     /// Attempts to establish a TCP connection with the provided url. If successful,
     /// sets up communication channels and begin listening for the provided events.
-    pub async fn build(server_url: &str, event_list: Vec<Event>) -> Result<Self, WsError> {
+    pub async fn listen(
+        &self,
+        rx: UnboundedReceiver<Message>,
+        server_url: &str,
+        event_list: Vec<Event>,
+    ) -> Result<(), WsError> {
         let (ws_stream, _) = connect_async(server_url).await?;
-        let (tx, rx) = unbounded();
         let (write, read) = ws_stream.split();
         let writer = rx.map(Ok).forward(write);
-
-        let mg: ClientEventCxt = Arc::new(Messenger { sender: tx });
 
         let mut event_map = HashMap::new();
         for ev in event_list {
@@ -73,15 +88,15 @@ impl Client {
                     return future::ok(());
                 }
             };
-            (*action)(event::Context::Client(mg.clone()), ws_msg.payload);
+            (*action)(
+                event::Context::Client(self.messenger.clone()),
+                ws_msg.payload,
+            );
             future::ok(())
         });
 
         pin_mut!(catch_inbound, writer);
         future::select(catch_inbound, writer).await;
-
-        Ok(Client {
-            messenger: mg.clone(),
-        })
+        Ok(())
     }
 }
