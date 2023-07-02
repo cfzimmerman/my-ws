@@ -30,7 +30,7 @@ async fn main() -> Result<(), WsError> {
     // Wait for the backend to be live before attempting to connect the client
     std::thread::sleep(time::Duration::from_millis(500));
 
-    let message = "echo out!";
+    let message = "MyWs is pretty cool!";
     examples::client_ex(&client_address, message).await?;
 
     // Wait for the WS conversation to take place
