@@ -56,47 +56,47 @@ impl Client {
         event_list: Vec<Event>,
     ) -> Result<(), WsError> {
         let (ws_stream, _) = connect_async(server_url).await?;
-        let (write, read) = ws_stream.split();
-        let writer = rx.map(Ok).forward(write);
+        let messenger = self.messenger.clone();
+        tokio::spawn(async move {
+            let (write, read) = ws_stream.split();
+            let writer = rx.map(Ok).forward(write);
 
-        let mut event_map = HashMap::new();
-        for ev in event_list {
-            event_map.insert(ev.path, ev.action);
-        }
-        let events = Arc::new(event_map);
+            let mut event_map = HashMap::new();
+            for ev in event_list {
+                event_map.insert(ev.path, ev.action);
+            }
+            let events = Arc::new(event_map);
 
-        let catch_inbound = read.try_for_each(|msg| {
-            let body = match msg {
-                Message::Text(txt) => txt,
-                _ => {
-                    eprintln!("received unsupported message type: {:?}", &msg);
-                    return future::ok(());
-                }
-            };
-            let ws_msg = match serde_json::from_str::<WsIoMsg>(&body) {
-                Ok(m) => m,
-                Err(e) => {
-                    eprintln!("unable to parse message: {:?}", e);
-                    return future::ok(());
-                }
-            };
-            let path: &str = &ws_msg.path;
-            let action = match (*events).get(path) {
-                Some(closure) => closure,
-                None => {
-                    eprintln!("received unrecognized path: {:?}", &ws_msg);
-                    return future::ok(());
-                }
-            };
-            (*action)(
-                event::Context::Client(self.messenger.clone()),
-                ws_msg.payload,
-            );
-            future::ok(())
+            let catch_inbound = read.try_for_each(|msg| {
+                let body = match msg {
+                    Message::Text(txt) => txt,
+                    _ => {
+                        eprintln!("received unsupported message type: {:?}", &msg);
+                        return future::ok(());
+                    }
+                };
+                let ws_msg = match serde_json::from_str::<WsIoMsg>(&body) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        eprintln!("unable to parse message: {:?}", e);
+                        return future::ok(());
+                    }
+                };
+                let path: &str = &ws_msg.path;
+                let action = match (*events).get(path) {
+                    Some(closure) => closure,
+                    None => {
+                        eprintln!("received unrecognized path: {:?}", &ws_msg);
+                        return future::ok(());
+                    }
+                };
+                (*action)(event::Context::Client(messenger.clone()), ws_msg.payload);
+                future::ok(())
+            });
+
+            pin_mut!(catch_inbound, writer);
+            future::select(catch_inbound, writer).await;
         });
-
-        pin_mut!(catch_inbound, writer);
-        future::select(catch_inbound, writer).await;
         Ok(())
     }
 }

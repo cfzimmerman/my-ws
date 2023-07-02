@@ -1,7 +1,6 @@
-use crate::ws::{server_io::ClientMap, ws_error::WsError};
+use crate::ws::{event::Message, server_io::ClientMap, ws_error::WsError};
 use futures_channel::mpsc::TrySendError;
 use std::net::SocketAddr;
-use tokio_tungstenite::tungstenite::protocol::Message;
 
 /// To: Who to send a WS message to.
 /// Origin: Send to the client we just received the message from.

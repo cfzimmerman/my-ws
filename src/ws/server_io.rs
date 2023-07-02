@@ -31,7 +31,7 @@ impl Io {
     /// build: attempt to bind a TCP listener at the given address and set up the WS client.
     pub async fn build(address: &str, event_list: Vec<Event>) -> Result<Io, WsError> {
         let listener = TcpListener::bind(&address).await?;
-        println!("Listening on {}", address);
+        println!("Listening on {}\n", address);
         let mut event_map = HashMap::new();
         for ev in event_list {
             event_map.insert(ev.path, ev.action);

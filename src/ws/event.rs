@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
+pub use tokio_tungstenite::tungstenite::protocol::Message;
 
 use super::{client_io::ClientEventCxt, server_io::ServerEventCxt};
 
