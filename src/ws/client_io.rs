@@ -1,14 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
-
-use crate::ws::event::WsIoMsg;
-
 use super::{
     event::{self, Event},
     ws_error::WsError,
 };
-
+use crate::ws::event::WsIoMsg;
 use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 use futures_util::{future, pin_mut, StreamExt, TryStreamExt};
+use std::{collections::HashMap, sync::Arc};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 #[derive(Debug)]
@@ -34,8 +31,8 @@ impl Messenger {
 pub type ClientEventCxt = Arc<Messenger>;
 
 impl Client {
-    /// returns a new Client and a receiver instance. The receiver instance
-    /// should be provided to 'listen' in order to properly emit WS messages.
+    /// Returns a new Client and a receiver instance. The receiver should be passed to
+    /// 'listen' to properly emit WS messages.
     pub fn new() -> (Self, UnboundedReceiver<Message>) {
         let (tx, rx) = unbounded();
         let mg: ClientEventCxt = Arc::new(Messenger { sender: tx });
@@ -48,7 +45,7 @@ impl Client {
     }
 
     /// Attempts to establish a TCP connection with the provided url. If successful,
-    /// sets up communication channels and begin listening for the provided events.
+    /// sets up communication channels and begins listening for the provided events.
     pub async fn listen(
         &self,
         rx: UnboundedReceiver<Message>,

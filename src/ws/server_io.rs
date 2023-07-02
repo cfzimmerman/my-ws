@@ -10,10 +10,9 @@ use tokio::{
     net::{TcpListener, TcpStream},
     sync::Mutex,
 };
-
 pub use tokio_tungstenite::tungstenite::protocol::Message;
 
-/// Io: the main socket server instance.
+/// Io: the main server-side instance.
 pub struct Io {
     listener: TcpListener,
     clients: ClientMap,
@@ -22,14 +21,16 @@ pub struct Io {
 
 type Tx = UnboundedSender<Message>;
 
-/// ClientMap: a thread-shareable hash mapping client addresses with
-/// their send-message connection.
-// ClientMap must be in a Mutex because the HashMap must be mutable.
+/// ClientMap: a thread-shareable hash mapping each client address with
+/// its associated transmitter.
+// ClientMap must be in a Mutex because we may need to insert and remove
+// clients from the session.
 pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 pub type ServerEventCxt = Arc<tokio::sync::Mutex<Socket>>;
 
 impl Io {
-    /// build: attempt to bind a TCP listener at the given address and set up the WS client.
+    /// build: attempt to bind a TCP listener at the given address and set up the
+    /// server WS handler.
     pub async fn build(address: &str, event_list: Vec<Event>) -> Result<Io, WsError> {
         let listener = TcpListener::bind(&address).await?;
         println!("Listening on {}\n", address);

@@ -1,5 +1,5 @@
 #[derive(Debug)]
-/// WsError: defines the errors that may be returned from WS
+/// WsError: defines the errors that may be returned from the WS module
 pub enum WsError {
     IoError(std::io::Error),
     ClientNotFound,

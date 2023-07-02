@@ -9,12 +9,12 @@ use crate::ws::{
 };
 
 pub async fn server_ex(addr: &str) -> Result<(), WsError> {
-    // A boxed async function that can be associated with a path.
-    // When the path is triggered, the function extracts the message and
-    // sends it back to every connected client.
-    // Because every path shares the same declaration of events, it's wrapped
-    // in an Arc Mutex.
     let server_echo: EventAction = Box::new(|socket, message| {
+        // Boxed async functions can be associated with paths.
+        // When the path is triggered, the function extracts the message and
+        // sends it back to every connected client.
+        // Because every path shares the same declaration of events, the map
+        // of paths is wrapped in an Arc Mutex.
         tokio::spawn(async move {
             let socket = match socket {
                 Context::Server(sk) => sk,
@@ -23,7 +23,7 @@ pub async fn server_ex(addr: &str) -> Result<(), WsError> {
             let socket = socket.lock().await;
             if let Value::String(msg) = message {
                 let copied_msg = msg.clone();
-                println!("server received: {}", msg);
+                println!("server received: {}", copied_msg);
                 let response = WsIoMsg {
                     path: "echo".to_string(),
                     payload: Value::String(msg),
@@ -58,19 +58,19 @@ pub async fn server_ex(addr: &str) -> Result<(), WsError> {
 }
 
 pub async fn client_ex(addr: &str, msg: &str) -> Result<(), WsError> {
-    // Path-Event boxed closures are practically identical between
-    // the client and server. Client closures
-    // receive a messenger, which provides the ability to send
-    // properly-formatted messages to the server.
-    // A single messenger is shared by all client handlers and is thus
-    // wrapped in an Arc.
     let client_echo: EventAction = Box::new(|messenger, message| {
+        // Path-Event closures are practically identical between
+        // the client and server. Client closures receive a messenger,
+        // which provides the ability to send properly-formatted messages
+        // to the server.
+        // A single messenger is shared by all client handlers and is thus
+        // wrapped in an Arc.
         tokio::spawn(async move {
             let messenger = match messenger {
                 Context::Server(_) => return,
                 Context::Client(mg) => mg,
             };
-            if let serde_json::value::Value::String(msg) = message {
+            if let Value::String(msg) = message {
                 println!("client received: {}", msg);
                 let unlistened_path = "echo back".to_string();
                 let payload = json!(msg);
@@ -90,8 +90,8 @@ pub async fn client_ex(addr: &str, msg: &str) -> Result<(), WsError> {
     client.listen(rx, addr, client_event_list).await?;
     let messenger = client.messenger.clone();
 
-    // Here, we send a single message to the server along the "echo" path
-
+    // Begin the echo chain by sending a single message to the server along
+    // the "echo" path
     match messenger.send("echo".to_string(), json!(msg)) {
         Ok(_) => println!("client sent: {}", msg),
         Err(e) => eprintln!("failed to send message: {:?}", e),

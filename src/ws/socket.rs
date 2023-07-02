@@ -2,7 +2,7 @@ use crate::ws::{event::Message, server_io::ClientMap, ws_error::WsError};
 use futures_channel::mpsc::TrySendError;
 use std::net::SocketAddr;
 
-/// To: Who to send a WS message to.
+/// To - Who to send a WS message to.
 /// Origin: Send to the client we just received the message from.
 /// NonOrigin: Send to everyone except the client we just received the message from.
 /// All: Send to everyone connected to the server.
@@ -21,7 +21,6 @@ pub struct Socket {
 }
 
 impl Socket {
-    /// new: creates a new Socket object
     pub fn new(clients: &ClientMap, address: SocketAddr) -> Socket {
         Socket {
             address,

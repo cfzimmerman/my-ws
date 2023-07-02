@@ -1,9 +1,8 @@
+use super::{client_io::ClientEventCxt, server_io::ServerEventCxt};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
 pub use tokio_tungstenite::tungstenite::protocol::Message;
-
-use super::{client_io::ClientEventCxt, server_io::ServerEventCxt};
 
 /// WsIoMsg: The fundamental unit passed between client and server. Any
 /// received package not obeying this struct will be ignored.
@@ -29,12 +28,11 @@ pub struct Event {
 /// EventMap: A thread-shared hash mapping each path to its associated action.
 pub type EventMap = Arc<HashMap<&'static str, EventAction>>;
 
-/// EventAction: Given a Socket instance and the string received by the server,
-/// performs some desired action.
+/// EventAction: Given a Client or Server context and the inbound value that
+/// has been received, performs some action.
 pub type EventAction = Box<dyn Fn(Context, Value) -> () + Send + Sync>;
 
 impl Event {
-    /// new: Creates a new Event object.
     pub fn new(path: &'static str, action: EventAction) -> Event {
         Event { path, action }
     }
