@@ -24,6 +24,7 @@ type Tx = UnboundedSender<Message>;
 
 /// ClientMap: a thread-shareable hash mapping client addresses with
 /// their send-message connection.
+// ClientMap must be in a Mutex because the HashMap must be mutable.
 pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 pub type ServerEventCxt = Arc<tokio::sync::Mutex<Socket>>;
 
